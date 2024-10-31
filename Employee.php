@@ -1,6 +1,6 @@
 <?php
 
-class Employee {
+abstract class Employee {
     protected $name;
     protected $address;
     protected $age;
@@ -13,7 +13,6 @@ class Employee {
         $this->companyName = $companyName;
     }
 
-    public function getDetails() {
-        return "Name: $this->name, Address: $this->address, Age: $this->age, Company: $this->companyName";
-    }
+    abstract public function getDetails();
 }
+

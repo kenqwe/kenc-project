@@ -3,20 +3,14 @@
 require_once 'Employee.php';
 
 class PieceWorker extends Employee {
-    private $piecesProduced;
-    private $payPerPiece;
+    private $pieceRate;
 
-    public function __construct($name, $address, $age, $companyName, $payPerPiece) {
+    public function __construct($name, $address, $age, $companyName, $pieceRate) {
         parent::__construct($name, $address, $age, $companyName);
-        $this->piecesProduced = 0;
-        $this->payPerPiece = $payPerPiece;
+        $this->pieceRate = $pieceRate;
     }
 
-    public function recordPieces($pieces) {
-        $this->piecesProduced += $pieces;
-    }
-
-    public function earnings() {
-        return $this->piecesProduced * $this->payPerPiece;
+    public function getDetails() {
+        return "Piece Worker: $this->name, Age: $this->age, Company: $this->companyName, Piece Rate: $this->pieceRate";
     }
 }

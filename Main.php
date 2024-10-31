@@ -6,7 +6,6 @@ require_once 'Employee.php';
 class Main {
     private EmployeeRoster $roster;
     private $size;
-    private $repeat;
 
     public function __construct() {
         $this->roster = new EmployeeRoster();
@@ -14,12 +13,9 @@ class Main {
 
     public function start() {
         $this->clear();
-        $this->repeat = true;
-
-        $this->size = (int)readline("Enter the size of the roster: ");
-
+        $this->size = $this->getIntInput("Enter the size of the roster: ");
         if ($this->size < 1) {
-            echo "Invalid input. Please try again.\n";
+            echo "Invalid roster size. Please try again.\n";
             readline("Press \"Enter\" key to continue...");
             $this->start();
         } else {
@@ -28,13 +24,10 @@ class Main {
     }
 
     public function entrance() {
-        $choice = 0;
-
-        while ($this->repeat) {
+        while (true) {
             $this->clear();
             $this->menu();
-
-            $choice = (int)readline("Select an option: ");
+            $choice = $this->getIntInput("Select an option: ");
 
             switch ($choice) {
                 case 1:
@@ -48,16 +41,12 @@ class Main {
                     break;
                 case 0:
                     echo "Exiting...\n";
-                    $this->repeat = false;
-                    break;
+                    exit;
                 default:
                     echo "Invalid input. Please try again.\n";
                     readline("Press \"Enter\" key to continue...");
-                    break;
             }
         }
-        echo "Process terminated.\n";
-        exit;
     }
 
     public function menu() {
@@ -69,28 +58,28 @@ class Main {
     }
 
     public function addMenu() {
+        if ($this->roster->count() >= $this->size) {
+            echo "Roster limit reached. Cannot add more employees.\n";
+            $this->promptContinue();
+            return;
+        }
+
         $this->clear();
         echo "*** Add Employee ***\n";
-
         $name = readline("Enter name: ");
         $address = readline("Enter address: ");
-        $age = (int)readline("Enter age: ");
+        $age = $this->getIntInput("Enter age: ");
         $cName = readline("Enter company name: ");
-
         $this->empType($name, $address, $age, $cName);
     }
 
     public function empType($name, $address, $age, $cName) {
         $this->clear();
         echo "--- Employee Details ---\n";
-        echo "Enter name: $name\n";
-        echo "Enter address: $address\n";
-        echo "Enter company name: $cName\n";
-        echo "Enter age: $age\n";
         echo "[1] Commission Employee\n";
         echo "[2] Hourly Employee\n";
         echo "[3] Piece Worker\n";
-        $type = (int)readline("Type of Employee: ");
+        $type = $this->getIntInput("Type of Employee: ");
 
         switch ($type) {
             case 1:
@@ -105,39 +94,47 @@ class Main {
             default:
                 echo "Invalid input. Please try again.\n";
                 readline("Press \"Enter\" key to continue...");
-                $this->addMenu();
-                return;
+                return $this->addMenu();
         }
 
         $this->roster->add($employee);
-        $this->repeat();
+        echo "Employee Added!\n";
+        $this->promptContinue();
     }
 
     public function deleteMenu() {
         $this->clear();
-
         echo "*** List of Employees on the current Roster ***\n";
         $employees = $this->roster->getAll();
+    
+        if (empty($employees)) {
+            echo "No record found.\n";
+            $this->promptContinue();
+            return;
+        }
+    
         foreach ($employees as $index => $employee) {
-            echo "[$index] " . $employee->getDetails() . "\n";
+            echo "[" . ($index + 1) . "] " . $employee->getDetails() . "\n";
         }
-
-        echo "\n[0] Return\n";
-        $index = (int)readline("Enter the index of the employee to delete: ");
-        if ($index != 0) {
-            $this->roster->delete($index);
+    
+        echo "[0] Return\n";
+        $index = $this->getIntInput("Enter the index of the employee to delete: ");
+        if ($index > 0 && $index <= count($employees)) {
+            $this->roster->delete($index - 1);
+            echo "Employee deleted successfully.\n";
+        } else if ($index != 0) {
+            echo "Invalid index. Try again.\n";
         }
-
-        readline("\nPress \"Enter\" key to continue...");
-        $this->deleteMenu();
+        $this->promptContinue();
     }
+    
 
     public function otherMenu() {
         $this->clear();
         echo "[1] Display\n";
         echo "[2] Count\n";
         echo "[0] Return\n";
-        $choice = (int)readline("Select Menu: ");
+        $choice = $this->getIntInput("Select Menu: ");
 
         switch ($choice) {
             case 1:
@@ -147,13 +144,10 @@ class Main {
                 $this->countMenu();
                 break;
             case 0:
-                break;
-
+                return;
             default:
                 echo "Invalid input. Please try again.\n";
                 readline("Press \"Enter\" key to continue...");
-                $this->otherMenu();
-                break;
         }
     }
 
@@ -164,13 +158,19 @@ class Main {
         echo "[3] Display Hourly Employees\n";
         echo "[4] Display Piece Workers\n";
         echo "[0] Return\n";
-        $choice = (int)readline("Select Menu: ");
-
+        $choice = $this->getIntInput("Select Menu: ");
+    
+        $employees = $this->roster->getAll();
+        if (empty($employees)) {
+            echo "No record found.\n";
+            $this->promptContinue();
+            return;
+        }
+    
         switch ($choice) {
             case 0:
-                break;
+                return;
             case 1:
-                $employees = $this->roster->getAll();
                 foreach ($employees as $employee) {
                     echo $employee->getDetails() . "\n";
                 }
@@ -186,22 +186,27 @@ class Main {
                 break;
             default:
                 echo "Invalid Input!\n";
-                break;
         }
-
-        readline("\nPress \"Enter\" key to continue...");
-        $this->displayMenu();
+        $this->promptContinue();
     }
-
+    
     public function displaySpecificEmployees($type) {
         $employees = $this->roster->getAll();
+        $found = false;
+    
         foreach ($employees as $employee) {
             if (get_class($employee) === $type) {
                 echo $employee->getDetails() . "\n";
+                $found = true;
             }
         }
+    
+        if (!$found) {
+            echo "No record found.\n";
+        }
+        $this->promptContinue();
     }
-
+    
     public function countMenu() {
         $this->clear();
         echo "[1] Count All Employees\n";
@@ -209,11 +214,11 @@ class Main {
         echo "[3] Count Hourly Employees\n";
         echo "[4] Count Piece Workers\n";
         echo "[0] Return\n";
-        $choice = (int)readline("Select Menu: ");
+        $choice = $this->getIntInput("Select Menu: ");
 
         switch ($choice) {
             case 0:
-                break;
+                return;
             case 1:
                 echo "Total employees: " . $this->roster->count() . "\n";
                 break;
@@ -228,30 +233,28 @@ class Main {
                 break;
             default:
                 echo "Invalid Input!\n";
-                break;
         }
+        $this->promptContinue();
+    }
 
-        readline("\nPress \"Enter\" key to continue...");
-        $this->countMenu();
+    public function getIntInput($message) {
+        $input = readline($message);
+        while (!is_numeric($input)) {
+            echo "Invalid input. Please enter a number.\n";
+            $input = readline($message);
+        }
+        return (int)$input;
+    }
+
+    public function promptContinue() {
+        readline("Press \"Enter\" key to continue...");
     }
 
     public function clear() {
-        system('clear');
-    }
-
-    public function repeat() {
-        echo "Employee Added!\n";
-        if ($this->roster->count() < $this->size) {
-            $c = readline("Add more? (y to continue): ");
-            if (strtolower($c) == 'y') {
-                $this->addMenu();
-            } else {
-                $this->entrance();
-            }
+        if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
+            system('cls');
         } else {
-            echo "Roster is Full\n";
-            readline("Press \"Enter\" key to continue...");
-            $this->entrance();
+            system('clear');
         }
     }
 }
